@@ -150,8 +150,9 @@ func Test_viewRun(t *testing.T) {
 				
 				
 				Assets
-				windows.zip  12 B
-				linux.tgz    34 B
+				NAME         DIGEST           SIZE
+				windows.zip  sha256:deadc0de  12 B
+				linux.tgz                     34 B
 				
 				View on GitHub: https://github.com/OWNER/REPO/releases/tags/v1.2.3
 			`),
@@ -174,8 +175,9 @@ func Test_viewRun(t *testing.T) {
 
 
 				Assets
-				windows.zip  12 B
-				linux.tgz    34 B
+				NAME         DIGEST           SIZE
+				windows.zip  sha256:deadc0de  12 B
+				linux.tgz                     34 B
 
 				View on GitHub: https://github.com/OWNER/REPO/releases/tags/v1.2.3
 			`),
@@ -248,8 +250,8 @@ func Test_viewRun(t *testing.T) {
 				"published_at": "%[1]s",
 				"html_url": "https://github.com/OWNER/REPO/releases/tags/v1.2.3",
 				"assets": [
-					{ "name": "windows.zip", "size": 12 },
-					{ "name": "linux.tgz", "size": 34 }
+					{ "name": "windows.zip", "size": 12, "digest": "sha256:deadc0de" },
+					{ "name": "linux.tgz", "size": 34, "digest": null }
 				]
 			}`, tt.releasedAt.Format(time.RFC3339), tt.releaseBody))
 
