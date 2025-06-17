@@ -9,6 +9,7 @@ import (
 
 	ghContext "github.com/cli/cli/v2/context"
 	"github.com/cli/cli/v2/git"
+	fd "github.com/cli/cli/v2/internal/featuredetection"
 	"github.com/cli/cli/v2/internal/ghrepo"
 	"github.com/cli/cli/v2/pkg/httpmock"
 	"github.com/stretchr/testify/require"
@@ -703,6 +704,81 @@ func TestFind(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFindAssignableActors(t *testing.T) {
+	t.Run("given actors are not assignable, do nothing special", func(t *testing.T) {
+		reg := &httpmock.Registry{}
+		defer reg.Verify(t)
+
+		// Ensure we never request assignedActors
+		reg.Exclude(t, httpmock.GraphQL(`assignedActors`))
+		reg.Register(
+			httpmock.GraphQL(`query PullRequestByNumber\b`),
+			httpmock.StringResponse(`{"data":{"repository":{
+						"pullRequest":{"number":13}
+					}}}`))
+
+		f := finder{
+			httpClient: func() (*http.Client, error) {
+				return &http.Client{Transport: reg}, nil
+			},
+		}
+
+		pr, _, err := f.Find(FindOptions{
+			Detector: &fd.DisabledDetectorMock{},
+			Fields:   []string{"assignees"},
+			Selector: "https://github.com/cli/cli/pull/13",
+		})
+		require.NoError(t, err)
+
+		require.False(t, pr.AssignedActorsUsed, "expected PR not to have assigned actors used")
+	})
+
+	t.Run("given actors are assignable, request assignedActors and indicate that on the returned PR", func(t *testing.T) {
+		reg := &httpmock.Registry{}
+		defer reg.Verify(t)
+
+		// Ensure that we only respond if assignedActors is requested
+		reg.Register(
+			httpmock.GraphQL(`assignedActors`),
+			httpmock.StringResponse(`{"data":{"repository":{
+						"pullRequest":{
+						    "number":13, 
+							"assignedActors": {
+								"nodes": [
+									{
+										"id": "HUBOTID",
+										"login": "hubot",
+										"__typename": "Bot"
+									},
+									{
+										"id": "MONAID",
+										"login": "MonaLisa",
+										"name": "Mona Display Name",
+										"__typename": "User"
+									}
+								],
+								"totalCount": 2
+							}}
+					}}}`))
+
+		f := finder{
+			httpClient: func() (*http.Client, error) {
+				return &http.Client{Transport: reg}, nil
+			},
+		}
+
+		pr, _, err := f.Find(FindOptions{
+			Detector: &fd.EnabledDetectorMock{},
+			Fields:   []string{"assignees"},
+			Selector: "https://github.com/cli/cli/pull/13",
+		})
+		require.NoError(t, err)
+
+		require.Equal(t, []string{"hubot", "MonaLisa"}, pr.AssignedActors.Logins())
+		require.True(t, pr.AssignedActorsUsed, "expected PR to have assigned actors used")
+	})
 }
 
 func stubBranchConfig(branchConfig git.BranchConfig, err error) func(context.Context, string) (git.BranchConfig, error) {

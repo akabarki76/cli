@@ -631,10 +631,11 @@ func Test_editRun(t *testing.T) {
 				},
 				EditFieldsSurvey: func(p prShared.EditPrompter, eo *prShared.Editable, _ string) error {
 					// Checking that the display name is being used in the prompt.
-					require.Equal(t, eo.Assignees.Default, []string{"hubot", "MonaLisa (Mona Display Name)"})
+					require.Equal(t, []string{"hubot"}, eo.Assignees.Default)
+					require.Equal(t, []string{"hubot"}, eo.Assignees.DefaultLogins)
 
-					// Mocking a selection of only MonaLisa in the prompt.
-					eo.Assignees.Value = []string{"MonaLisa (Mona Display Name)"}
+					// Adding MonaLisa as PR assignee, should preserve hubot.
+					eo.Assignees.Value = []string{"hubot", "MonaLisa (Mona Display Name)"}
 					return nil
 				},
 				FetchOptions:    prShared.FetchOptions,
@@ -662,7 +663,7 @@ func Test_editRun(t *testing.T) {
 							// Checking that despite the display name being returned
 							// from the EditFieldsSurvey, the ID is still
 							// used in the mutation.
-							require.Contains(t, inputs["actorIds"], "MONAID")
+							require.Subset(t, inputs["actorIds"], []string{"MONAID", "HUBOTID"})
 						}),
 				)
 			},
@@ -809,15 +810,9 @@ func mockIsssueNumberGetWithAssignedActors(_ *testing.T, reg *httpmock.Registry,
 							"id": "HUBOTID",
 							"login": "hubot",
 							"__typename": "Bot"
-						},
-						{
-							"id": "MONAID",
-							"login": "MonaLisa",
-							"name": "Mona Display Name",
-							"__typename": "User"
 						}
 					],
-					"totalCount": 2
+					"totalCount": 1
 				}
 			} } } }`, number)),
 	)

@@ -18,6 +18,10 @@ permissions:
 jobs:
   CodeQL-Build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['go', 'actions']
 
     steps:
       - name: Check out code
@@ -26,13 +30,20 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: go
+          languages: ${{ matrix.language }}
           queries: security-and-quality
+          config: |
+            paths-ignore:
+              - 'third-party/**'
+              - 'third-party-licenses.*.md'
 
       - name: Setup Go
+        if: matrix.language == 'go'
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

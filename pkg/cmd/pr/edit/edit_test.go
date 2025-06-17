@@ -341,9 +341,11 @@ func Test_editRun(t *testing.T) {
 		{
 			name: "non-interactive",
 			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
 				SelectorArg: "123",
 				Finder: shared.NewMockFinder("123", &api.PullRequest{
-					URL: "https://github.com/OWNER/REPO/pull/123",
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
 				}, ghrepo.New("OWNER", "REPO")),
 				Interactive: false,
 				Editable: shared.Editable{
@@ -403,9 +405,11 @@ func Test_editRun(t *testing.T) {
 		{
 			name: "non-interactive skip reviewers",
 			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
 				SelectorArg: "123",
 				Finder: shared.NewMockFinder("123", &api.PullRequest{
-					URL: "https://github.com/OWNER/REPO/pull/123",
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
 				}, ghrepo.New("OWNER", "REPO")),
 				Interactive: false,
 				Editable: shared.Editable{
@@ -459,9 +463,11 @@ func Test_editRun(t *testing.T) {
 		{
 			name: "non-interactive remove all reviewers",
 			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
 				SelectorArg: "123",
 				Finder: shared.NewMockFinder("123", &api.PullRequest{
-					URL: "https://github.com/OWNER/REPO/pull/123",
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
 				}, ghrepo.New("OWNER", "REPO")),
 				Interactive: false,
 				Editable: shared.Editable{
@@ -520,12 +526,37 @@ func Test_editRun(t *testing.T) {
 		{
 			name: "interactive",
 			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
 				SelectorArg: "123",
 				Finder: shared.NewMockFinder("123", &api.PullRequest{
-					URL: "https://github.com/OWNER/REPO/pull/123",
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
 				}, ghrepo.New("OWNER", "REPO")),
-				Interactive:     true,
-				Surveyor:        testSurveyor{},
+				Interactive: true,
+				Surveyor: testSurveyor{
+					fieldsToEdit: func(e *shared.Editable) error {
+						e.Title.Edited = true
+						e.Body.Edited = true
+						e.Reviewers.Edited = true
+						e.Assignees.Edited = true
+						e.Labels.Edited = true
+						e.Projects.Edited = true
+						e.Milestone.Edited = true
+						return nil
+					},
+					editFields: func(e *shared.Editable, _ string) error {
+						e.Title.Value = "new title"
+						e.Body.Value = "new body"
+						e.Reviewers.Value = []string{"monalisa", "hubot", "OWNER/core", "OWNER/external"}
+						e.Assignees.Value = []string{"monalisa", "hubot"}
+						e.Labels.Value = []string{"feature", "TODO", "bug"}
+						e.Labels.Add = []string{"feature", "TODO", "bug"}
+						e.Labels.Remove = []string{"docs"}
+						e.Projects.Value = []string{"Cleanup", "CleanupV2"}
+						e.Milestone.Value = "GA"
+						return nil
+					},
+				},
 				Fetcher:         testFetcher{},
 				EditorRetriever: testEditorRetriever{},
 			},
@@ -542,12 +573,35 @@ func Test_editRun(t *testing.T) {
 		{
 			name: "interactive skip reviewers",
 			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
 				SelectorArg: "123",
 				Finder: shared.NewMockFinder("123", &api.PullRequest{
-					URL: "https://github.com/OWNER/REPO/pull/123",
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
 				}, ghrepo.New("OWNER", "REPO")),
-				Interactive:     true,
-				Surveyor:        testSurveyor{skipReviewers: true},
+				Interactive: true,
+				Surveyor: testSurveyor{
+					fieldsToEdit: func(e *shared.Editable) error {
+						e.Title.Edited = true
+						e.Body.Edited = true
+						e.Assignees.Edited = true
+						e.Labels.Edited = true
+						e.Projects.Edited = true
+						e.Milestone.Edited = true
+						return nil
+					},
+					editFields: func(e *shared.Editable, _ string) error {
+						e.Title.Value = "new title"
+						e.Body.Value = "new body"
+						e.Assignees.Value = []string{"monalisa", "hubot"}
+						e.Labels.Value = []string{"feature", "TODO", "bug"}
+						e.Labels.Add = []string{"feature", "TODO", "bug"}
+						e.Labels.Remove = []string{"docs"}
+						e.Projects.Value = []string{"Cleanup", "CleanupV2"}
+						e.Milestone.Value = "GA"
+						return nil
+					},
+				},
 				Fetcher:         testFetcher{},
 				EditorRetriever: testEditorRetriever{},
 			},
@@ -563,12 +617,37 @@ func Test_editRun(t *testing.T) {
 		{
 			name: "interactive remove all reviewers",
 			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
 				SelectorArg: "123",
 				Finder: shared.NewMockFinder("123", &api.PullRequest{
-					URL: "https://github.com/OWNER/REPO/pull/123",
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
 				}, ghrepo.New("OWNER", "REPO")),
-				Interactive:     true,
-				Surveyor:        testSurveyor{removeAllReviewers: true},
+				Interactive: true,
+				Surveyor: testSurveyor{
+					fieldsToEdit: func(e *shared.Editable) error {
+						e.Title.Edited = true
+						e.Body.Edited = true
+						e.Reviewers.Edited = true
+						e.Assignees.Edited = true
+						e.Labels.Edited = true
+						e.Projects.Edited = true
+						e.Milestone.Edited = true
+						return nil
+					},
+					editFields: func(e *shared.Editable, _ string) error {
+						e.Title.Value = "new title"
+						e.Body.Value = "new body"
+						e.Reviewers.Remove = []string{"monalisa", "hubot", "OWNER/core", "OWNER/external", "dependabot"}
+						e.Assignees.Value = []string{"monalisa", "hubot"}
+						e.Labels.Value = []string{"feature", "TODO", "bug"}
+						e.Labels.Add = []string{"feature", "TODO", "bug"}
+						e.Labels.Remove = []string{"docs"}
+						e.Projects.Value = []string{"Cleanup", "CleanupV2"}
+						e.Milestone.Value = "GA"
+						return nil
+					},
+				},
 				Fetcher:         testFetcher{},
 				EditorRetriever: testEditorRetriever{},
 			},
@@ -579,6 +658,71 @@ func Test_editRun(t *testing.T) {
 				mockPullRequestUpdateActorAssignees(reg)
 				mockPullRequestUpdateLabels(reg)
 				mockProjectV2ItemUpdate(reg)
+			},
+			stdout: "https://github.com/OWNER/REPO/pull/123\n",
+		},
+		{
+			name: "interactive prompts with actor assignee display names when actors available",
+			input: &EditOptions{
+				Detector:    &fd.EnabledDetectorMock{},
+				SelectorArg: "123",
+				Finder: shared.NewMockFinder("123", &api.PullRequest{
+					URL:                "https://github.com/OWNER/REPO/pull/123",
+					AssignedActorsUsed: true,
+					AssignedActors: api.AssignedActors{
+						Nodes: []api.Actor{
+							{
+								ID:       "HUBOTID",
+								Login:    "hubot",
+								TypeName: "Bot",
+							},
+						},
+						TotalCount: 1,
+					},
+				}, ghrepo.New("OWNER", "REPO")),
+				Interactive: true,
+				Surveyor: testSurveyor{
+					fieldsToEdit: func(e *shared.Editable) error {
+						e.Assignees.Edited = true
+						return nil
+					},
+					editFields: func(e *shared.Editable, _ string) error {
+						// Checking that the display name is being used in the prompt.
+						require.Equal(t, []string{"hubot"}, e.Assignees.Default)
+						require.Equal(t, []string{"hubot"}, e.Assignees.DefaultLogins)
+
+						// Adding MonaLisa as PR assignee, should preserve hubot.
+						e.Assignees.Value = []string{"hubot", "MonaLisa (Mona Display Name)"}
+						return nil
+					},
+				},
+				Fetcher:         testFetcher{},
+				EditorRetriever: testEditorRetriever{},
+			},
+			httpStubs: func(reg *httpmock.Registry) {
+				reg.Register(
+					httpmock.GraphQL(`query RepositoryAssignableActors\b`),
+					httpmock.StringResponse(`
+					{ "data": { "repository": { "suggestedActors": {
+						"nodes": [
+							{ "login": "hubot", "id": "HUBOTID", "__typename": "Bot" },
+							{ "login": "MonaLisa", "id": "MONAID", "name": "Mona Display Name", "__typename": "User" }
+						],
+						"pageInfo": { "hasNextPage": false }
+					} } } }
+					`))
+				mockPullRequestUpdate(reg)
+				reg.Register(
+					httpmock.GraphQL(`mutation ReplaceActorsForAssignable\b`),
+					httpmock.GraphQLMutation(`
+					{ "data": { "replaceActorsForAssignable": { "__typename": "" } } }`,
+						func(inputs map[string]interface{}) {
+							// Checking that despite the display name being returned
+							// from the EditFieldsSurvey, the ID is still
+							// used in the mutation.
+							require.Subset(t, inputs["actorIds"], []string{"MONAID", "HUBOTID"})
+						}),
+				)
 			},
 			stdout: "https://github.com/OWNER/REPO/pull/123\n",
 		},
@@ -654,7 +798,7 @@ func mockRepoMetadata(reg *httpmock.Registry, skipReviewers bool) {
 			{ "data": { "repository": { "suggestedActors": {
 				"nodes": [
 					{ "login": "hubot", "id": "HUBOTID", "__typename": "Bot" },
-					{ "login": "MonaLisa", "id": "MONAID", "__typename": "User" }
+					{ "login": "MonaLisa", "id": "MONAID", "name": "Mona Display Name", "__typename": "User" }
 				],
 				"pageInfo": { "hasNextPage": false }
 			} } } }
@@ -801,47 +945,25 @@ func mockProjectV2ItemUpdate(reg *httpmock.Registry) {
 }
 
 type testFetcher struct{}
-type testSurveyor struct {
-	skipReviewers      bool
-	removeAllReviewers bool
-}
-type testEditorRetriever struct{}
 
 func (f testFetcher) EditableOptionsFetch(client *api.Client, repo ghrepo.Interface, opts *shared.Editable) error {
 	return shared.FetchOptions(client, repo, opts)
 }
 
-func (s testSurveyor) FieldsToEdit(e *shared.Editable) error {
-	e.Title.Edited = true
-	e.Body.Edited = true
-	if !s.skipReviewers {
-		e.Reviewers.Edited = true
-	}
-	e.Assignees.Edited = true
-	e.Labels.Edited = true
-	e.Projects.Edited = true
-	e.Milestone.Edited = true
-	return nil
+type testSurveyor struct {
+	fieldsToEdit func(e *shared.Editable) error
+	editFields   func(e *shared.Editable, editorCmd string) error
 }
 
-func (s testSurveyor) EditFields(e *shared.Editable, _ string) error {
-	e.Title.Value = "new title"
-	e.Body.Value = "new body"
-	if !s.skipReviewers {
-		if s.removeAllReviewers {
-			e.Reviewers.Remove = []string{"monalisa", "hubot", "OWNER/core", "OWNER/external", "dependabot"}
-		} else {
-			e.Reviewers.Value = []string{"monalisa", "hubot", "OWNER/core", "OWNER/external"}
-		}
-	}
-	e.Assignees.Value = []string{"monalisa", "hubot"}
-	e.Labels.Value = []string{"feature", "TODO", "bug"}
-	e.Labels.Add = []string{"feature", "TODO", "bug"}
-	e.Labels.Remove = []string{"docs"}
-	e.Projects.Value = []string{"Cleanup", "CleanupV2"}
-	e.Milestone.Value = "GA"
-	return nil
+func (s testSurveyor) FieldsToEdit(e *shared.Editable) error {
+	return s.fieldsToEdit(e)
 }
+
+func (s testSurveyor) EditFields(e *shared.Editable, editorCmd string) error {
+	return s.editFields(e, editorCmd)
+}
+
+type testEditorRetriever struct{}
 
 func (t testEditorRetriever) Retrieve() (string, error) {
 	return "vim", nil

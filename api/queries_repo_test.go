@@ -461,6 +461,78 @@ t001: team(slug:"robots"){id,slug}
 	}
 }
 
+func TestMembersToIDs(t *testing.T) {
+	t.Parallel()
+
+	t.Run("finds ids in assignable users", func(t *testing.T) {
+		t.Parallel()
+
+		repoMetadataResult := RepoMetadataResult{
+			AssignableUsers: []AssignableUser{
+				NewAssignableUser("MONAID", "monalisa", ""),
+				NewAssignableUser("MONAID2", "monalisa2", ""),
+			},
+			AssignableActors: []AssignableActor{
+				NewAssignableBot("HUBOTID", "hubot"),
+			},
+		}
+		ids, err := repoMetadataResult.MembersToIDs([]string{"monalisa"})
+		require.NoError(t, err)
+		require.Equal(t, []string{"MONAID"}, ids)
+	})
+
+	t.Run("finds ids by assignable actor logins", func(t *testing.T) {
+		t.Parallel()
+
+		repoMetadataResult := RepoMetadataResult{
+			AssignableActors: []AssignableActor{
+				NewAssignableBot("HUBOTID", "hubot"),
+				NewAssignableUser("MONAID", "monalisa", ""),
+			},
+		}
+		ids, err := repoMetadataResult.MembersToIDs([]string{"monalisa"})
+		require.NoError(t, err)
+		require.Equal(t, []string{"MONAID"}, ids)
+	})
+
+	t.Run("finds ids by assignable actor display names", func(t *testing.T) {
+		t.Parallel()
+
+		repoMetadataResult := RepoMetadataResult{
+			AssignableActors: []AssignableActor{
+				NewAssignableUser("MONAID", "monalisa", "mona"),
+			},
+		}
+		ids, err := repoMetadataResult.MembersToIDs([]string{"monalisa (mona)"})
+		require.NoError(t, err)
+		require.Equal(t, []string{"MONAID"}, ids)
+	})
+
+	t.Run("when a name appears in both assignable users and actors, the id is only returned once", func(t *testing.T) {
+		t.Parallel()
+
+		repoMetadataResult := RepoMetadataResult{
+			AssignableUsers: []AssignableUser{
+				NewAssignableUser("MONAID", "monalisa", ""),
+			},
+			AssignableActors: []AssignableActor{
+				NewAssignableUser("MONAID", "monalisa", ""),
+			},
+		}
+		ids, err := repoMetadataResult.MembersToIDs([]string{"monalisa"})
+		require.NoError(t, err)
+		require.Equal(t, []string{"MONAID"}, ids)
+	})
+
+	t.Run("when id is not found, returns an error", func(t *testing.T) {
+		t.Parallel()
+
+		repoMetadataResult := RepoMetadataResult{}
+		_, err := repoMetadataResult.MembersToIDs([]string{"monalisa"})
+		require.Error(t, err)
+	})
+}
+
 func sliceEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

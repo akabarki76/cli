@@ -242,6 +242,33 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 		}
 	}
 
+	// Ok this is super, super horrible so bear with me.
+	// The `assignees` field on a Pull Request exposes users that are assigned. It is also possible for bots to be
+	// assigned, but they only appear under the `assignedActors` field. Ideally, the caller of `Find` would determine
+	// the correct field to use based on the `fd.Detector` that is passed in, but they can't construct a detector
+	// because the BaseRepo is only determined within this function. The more correct solution is to do what I did with
+	// the issue commands and decouple argument parsing from API lookup. See PR #10811 for example.
+	var actorAssigneesUsed bool
+	if fields.Contains("assignees") {
+		if opts.Detector == nil {
+			cachedClient := api.NewCachedHTTPClient(httpClient, time.Hour*24)
+			opts.Detector = fd.NewDetector(cachedClient, f.baseRefRepo.RepoHost())
+		}
+
+		issueFeatures, err := opts.Detector.IssueFeatures()
+		if err != nil {
+			return nil, nil, fmt.Errorf("error detecting issue features: %v", err)
+		}
+
+		// If actors are assignable on this host then we additionally request the `assignedActors` field.
+		// Note that we don't remove the `assignees` field because some commands (`pr view`) do not display actor
+		// assignees yet, so we have to have both sets of data.
+		if issueFeatures.ActorIsAssignable {
+			fields.Add("assignedActors")
+			actorAssigneesUsed = true
+		}
+	}
+
 	var pr *api.PullRequest
 	if f.prNumber > 0 {
 		// If we have a PR number, let's look it up
@@ -295,6 +322,10 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 			}
 			return nil
 		})
+	}
+
+	if actorAssigneesUsed {
+		pr.AssignedActorsUsed = true
 	}
 
 	return pr, f.baseRefRepo, g.Wait()
