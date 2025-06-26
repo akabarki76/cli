@@ -141,11 +141,17 @@ type dialerFunc func(ctx context.Context, network, addr string) (net.Conn, error
 // HTTP-01 validation. The provided dialerFunc is used as the Transport's
 // DialContext handler.
 func httpTransport(df dialerFunc) *http.Transport {
+	// Create a trusted certificate pool (can be customized to include specific certificates).
+	certPool := x509.NewCertPool()
+	// Optionally, load additional certificates into the pool if needed.
+	// Example: certPool.AppendCertsFromPEM(customCertPEM)
+
 	return &http.Transport{
 		DialContext: df,
-		// We are talking to a client that does not yet have a certificate,
-		// so we accept a temporary, invalid one.
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		// Use a secure TLS configuration with the trusted certificate pool.
+		TLSClientConfig: &tls.Config{
+			RootCAs: certPool,
+		},
 		// We don't expect to make multiple requests to a client, so close
 		// connection immediately.
 		DisableKeepAlives: true,
