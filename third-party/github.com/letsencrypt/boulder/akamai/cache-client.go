@@ -331,8 +331,9 @@ func CheckSignature(secret string, url string, r *http.Request, body []byte) err
 	h.Write(input)
 	expectedSignature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	if signature != expectedSignature {
-		return fmt.Errorf("expected signature %q, got %q in %q",
-			signature, authorization, expectedSignature)
+		sanitizedAuth := sanitizeAuthorizationHeader(authorization)
+		return fmt.Errorf("expected signature %q, got sanitized authorization header %q in %q",
+			signature, sanitizedAuth, expectedSignature)
 	}
 	return nil
 }
@@ -342,6 +343,14 @@ func reverseBytes(b []byte) []byte {
 		b[i], b[j] = b[j], b[i]
 	}
 	return b
+}
+
+// sanitizeAuthorizationHeader obfuscates sensitive parts of the Authorization header.
+func sanitizeAuthorizationHeader(authHeader string) string {
+	if len(authHeader) > 10 {
+		return authHeader[:5] + "..." + authHeader[len(authHeader)-5:]
+	}
+	return "REDACTED"
 }
 
 // makeOCSPCacheURLs constructs the 3 URLs associated with each cached OCSP
