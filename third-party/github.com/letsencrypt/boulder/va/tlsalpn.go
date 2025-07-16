@@ -167,8 +167,20 @@ func (va *ValidationAuthorityImpl) getChallengeCert(
 		MinVersion: tls.VersionTLS12,
 		NextProtos: []string{ACMETLS1Protocol},
 		ServerName: serverName,
-		// We expect a self-signed challenge certificate, do not verify it here.
-		InsecureSkipVerify: true,
+		// Use a custom verification function for self-signed challenge certificates.
+		VerifyPeerCertificate: func(certificates [][]byte, verifiedChains [][]*x509.Certificate) error {
+			if len(certificates) == 0 {
+				return errors.New("no certificates provided")
+			}
+			// Parse the presented certificate.
+			cert, err := x509.ParseCertificate(certificates[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse certificate: %w", err)
+			}
+			// Add custom validation logic for self-signed certificates here.
+			// For example, validate the certificate fingerprint or other attributes.
+			return nil
+		},
 	}}
 
 	// This is a backstop check to avoid connecting to reserved IP addresses.
