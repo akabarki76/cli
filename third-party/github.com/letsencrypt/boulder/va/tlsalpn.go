@@ -173,7 +173,7 @@ func (va *ValidationAuthorityImpl) getChallengeCert(
 				return errors.New("no certificates provided")
 			}
 			// Parse the presented certificate.
-			cert, err := x509.ParseCertificate(certificates[0])
+			_, err := x509.ParseCertificate(certificates[0])
 			if err != nil {
 				return fmt.Errorf("failed to parse certificate: %w", err)
 			}
