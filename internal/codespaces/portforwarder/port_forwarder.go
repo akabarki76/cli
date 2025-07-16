@@ -263,7 +263,11 @@ func (fwd *CodespacesPortForwarder) UpdatePortVisibility(ctx context.Context, re
 		return nil
 	}
 
+
+	// Validate the port number before converting to uint16
+
 	// Validate the remotePort value before converting to uint16
+
 	if remotePort < 0 || remotePort > 65535 {
 		return fmt.Errorf("invalid port number: %d. Port must be between 0 and 65535", remotePort)
 	}
