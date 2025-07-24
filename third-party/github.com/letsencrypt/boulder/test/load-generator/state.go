@@ -1,5 +1,12 @@
 package main
 
+func createCertPool() *x509.CertPool {
+	certPool := x509.NewCertPool()
+	// Load trusted certificates into the pool
+	// Example: certPool.AppendCertsFromPEM([]byte("..."))
+	return certPool
+}
+
 import (
 	"bytes"
 	"context"
@@ -304,7 +311,7 @@ func New(
 			}).DialContext,
 			TLSHandshakeTimeout: 5 * time.Second,
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, // CDN bypass can cause validation failures
+				RootCAs: createCertPool(), // Use a custom certificate pool for validation
 			},
 			MaxIdleConns:    500,
 			IdleConnTimeout: 90 * time.Second,

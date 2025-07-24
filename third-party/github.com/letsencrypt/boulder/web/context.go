@@ -141,6 +141,10 @@ func (th *TopHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		realIP = "0.0.0.0"
 	}
 
+	// Sanitize the realIP value to remove newline and carriage return characters.
+	realIP = strings.ReplaceAll(realIP, "\n", "")
+	realIP = strings.ReplaceAll(realIP, "\r", "")
+
 	userAgent := r.Header.Get("User-Agent")
 
 	logEvent := &RequestEvent{

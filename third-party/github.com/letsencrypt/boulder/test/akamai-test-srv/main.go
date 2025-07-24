@@ -61,7 +61,7 @@ func main() {
 		}
 		if err = akamai.CheckSignature(*secret, "http://"+*listenAddr, r, body); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Println("Bad signature:", err)
+			fmt.Println("Bad signature error:", err)
 			return
 		}
 		if err = json.Unmarshal(body, &purgeRequest); err != nil {
